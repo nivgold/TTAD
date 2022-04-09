@@ -3,6 +3,7 @@ import time
 # ignoring TF info messages
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
+import random
 import numpy as np
 import tensorflow as tf
 
@@ -20,6 +21,11 @@ def get_execute_time(start_time, end_time):
     minutes, seconds = divmod(rem, 60)
     print("{:0>2}:{:0>2}:{:05.2f} ---".format(int(hours), int(minutes), seconds))
 
+def seed_everything(seed):
+    random.seed(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    np.random.seed(seed)
+    tf.random.set_seed(seed)
 
 def run_experiment(args):
     """
@@ -31,8 +37,7 @@ def run_experiment(args):
     """
 
     # setting seed
-    tf.random.set_seed(1234)
-    np.random.seed(1234)
+    seed_everything(1234)
 
     # loading the preprocessed dataset
     print(f"--- Loading preprocessed {args.dataset_name.capitalize()} dataset ---")
