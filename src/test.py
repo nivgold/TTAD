@@ -7,7 +7,6 @@ from sklearn.metrics import precision_recall_fscore_support as prf, accuracy_sco
 from tqdm import tqdm
 
 from imblearn.over_sampling import SMOTE
-from imblearn.over_sampling import BorderlineSMOTE
 
 from cuml.cluster import KMeans as cuKMeans
 from sklearn.cluster import KMeans
@@ -20,8 +19,6 @@ evaluated_algorithms = [
     'Gaussian_TTA_Baseline',
     'Euclidean_SMOTE_TTA',
     'Siamese_SMOTE_TTA',
-    'Euclidean_BorderlineSMOTE_TTA',
-    'Siamese_BorderlineSMOTE_TTA',
     'Euclidean_Kmeans_TTA',
     'Siamese_Kmeans_TTA'
 ]
@@ -131,8 +128,6 @@ def test_loop(X, test_ds, trained_estimator, euclidean_nn_model, siamese_nn_mode
             'Gaussian_TTA_Baseline': generate_random_noise_tta_samples(x_batch_test.numpy(), num_augmentations=num_augmentations),
             'Euclidean_SMOTE_TTA': generate_oversampling_tta_samples(euclidean_nn_batch_neighbors_features, oversampling_method=SMOTE, num_neighbors=num_neighbors, num_augmentations=num_augmentations),
             'Siamese_SMOTE_TTA': generate_oversampling_tta_samples(siamese_nn_batch_neighbors_features, oversampling_method=SMOTE, num_neighbors=num_neighbors, num_augmentations=num_augmentations),
-            'Euclidean_BorderlineSMOTE_TTA': generate_oversampling_tta_samples(euclidean_nn_batch_neighbors_features, oversampling_method=BorderlineSMOTE, num_neighbors=num_neighbors, num_augmentations=num_augmentations),
-            'Siamese_BorderlineSMOTE_TTA': generate_oversampling_tta_samples(siamese_nn_batch_neighbors_features, oversampling_method=BorderlineSMOTE, num_neighbors=num_neighbors, num_augmentations=num_augmentations),
             'Euclidean_Kmeans_TTA': generate_kmeans_tta_samples(euclidean_nn_batch_neighbors_features, args.with_cuml, num_augmentations=num_augmentations),
             'Siamese_Kmeans_TTA': generate_kmeans_tta_samples(siamese_nn_batch_neighbors_features, args.with_cuml, num_augmentations=num_augmentations)
         }
@@ -275,14 +270,14 @@ def generate_kmeans_tta_samples(batch_neighbors_features, with_cuML, num_augment
 
 def generate_oversampling_tta_samples(oversampling_batch_neighbors_features, num_neighbors, num_augmentations, oversampling_method):
     """
-    Generating TTA with oversampling method (either SMOTE or Borderline-SMOTE)
+    Generating TTA with oversampling method (SMOTE)
 
     Parameters
     ----------
     oversampling_batch_neighbors_features: numpy ndarray of shape (batch_size, num_neighbors, #features). The features of each neighbor of each test sample that is in the batch
     num_neighbors: int. The number of neighbor each test sample in the batch has
     num_augmentations: int. The number of augmentations to produce
-    oversampling_meethod: function. Either SMOTE or Borderline-SMOTE
+    oversampling_meethod: function. SMOTE function
     """
 
     batch_size, features_dim = oversampling_batch_neighbors_features.shape[0], oversampling_batch_neighbors_features.shape[-1]
