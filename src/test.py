@@ -27,7 +27,8 @@ evaluated_algorithms = [
 evaluated_estimators = [
     'Autoencoder',
     'Isolation Forest',
-    'One-Class SVM'
+    'One-Class SVM',
+    'Local Outlier Factor'
 ]
 
 def test(X, folded_test_datasets_list, trained_estimators_list, trained_siamese_network, euclidean_nn_model, siamese_nn_model, args):
@@ -94,6 +95,7 @@ def test_loop(X, test_ds, trained_estimator, euclidean_nn_model, siamese_nn_mode
     trained_encoder, trained_decoder = trained_estimator['ae'][0], trained_estimator['ae'][1]
     trained_if = trained_estimator['if']
     trained_ocs = trained_estimator['ocs']
+    trained_lof = trained_estimator['lof']
 
     num_neighbors = args.num_neighbors
     num_augmentations = args.num_augmentations
@@ -108,11 +110,13 @@ def test_loop(X, test_ds, trained_estimator, euclidean_nn_model, siamese_nn_mode
         ae_reconstruction_loss = ae_test_step_func(x_batch_test, trained_encoder, trained_decoder, loss_func).numpy()
         if_anomaly_score = if_test_step(x_batch_test, trained_if)
         ocs_anomaly_score = ocs_test_step(x_batch_test, trained_ocs)
+        lof_anomaly_score = lof_test_step(x_batch_test, trained_lof)
 
         # saving first Baseline results for each estimator
         algorithms_test_loss['WO_TTA_Baseline']['Autoencoder'].append(ae_reconstruction_loss)
         algorithms_test_loss['WO_TTA_Baseline']['Isolation Forest'].append(if_anomaly_score)
         algorithms_test_loss['WO_TTA_Baseline']['One-Class SVM'].append(ocs_anomaly_score)
+        algorithms_test_loss['WO_TTA_Baseline']['Local Outlier Factor'].append(lof_anomaly_score)
         test_labels.append(y_batch_test.numpy())
 
         # calculate euclidean nn indices
@@ -136,7 +140,8 @@ def test_loop(X, test_ds, trained_estimator, euclidean_nn_model, siamese_nn_mode
             algorithm: {
                 'Autoencoder': ae_test_step_func(tta_samples, trained_encoder, trained_decoder, loss_func).numpy(),
                 'Isolation Forest': if_test_step(tta_samples, trained_if),
-                'One-Class SVM': ocs_test_step(tta_samples, trained_ocs)
+                'One-Class SVM': ocs_test_step(tta_samples, trained_ocs),
+                'Local Outlier Factor': lof_test_step(tta_samples, trained_lof)
             }
             for algorithm, tta_samples in algorithms_tta_samples_dict.items()
         }
@@ -147,9 +152,6 @@ def test_loop(X, test_ds, trained_estimator, euclidean_nn_model, siamese_nn_mode
                 wo_tta_pred = algorithms_test_loss['WO_TTA_Baseline'][estimator][step]
                 # combine original test samples' predictions with the kmeans regular-NN TTA samples' prediction
                 for wo_tta_single_pred, tta_single_pred in list(zip(wo_tta_pred, tta_preds)):
-                    # print(f"algorithm:{algorithm}, estimator:{estimator}")
-                    # print(f'primary_pred: {wo_tta_single_pred.shape}, tta_preds: {tta_single_pred.shape}')
-                    # print()
                     combined_tta_loss = np.concatenate([[wo_tta_single_pred], tta_single_pred])
                     algorithms_test_loss[algorithm][estimator].append(np.mean(combined_tta_loss))
     
@@ -174,7 +176,6 @@ def ae_test_step():
         reconstructed = decoder(latent_var)
         reconstruction_loss = loss_func(inputs, reconstructed)
 
-        # print("ae tta predictions shape: ", reconstruction_loss.shape)
         return reconstruction_loss
     return test_one_step
 
@@ -198,7 +199,28 @@ def if_test_step(test_X, trained_if):
     else:
         anomaly_score = -1 * trained_if.score_samples(test_X)
 
-    # print("if tta predictions shape: ", anomaly_score.shape)
+    return anomaly_score
+
+def lof_test_step(test_X, trained_lof):
+    """
+    A test phase with Local Outlier Factor on the given test set
+
+    Parameters
+    ----------
+    test_X: numpy ndarray of shape (batch_size, dataset's features dim). The batch test set
+    trained_lof: scikit-learn's LocalOutlierFactor. The trained Local Outlier Factor as anomaly detection estimator
+    """
+
+    if len(test_X.shape) == 3:
+        batch_anomaly_score = []
+        for one_test_tta_samples in test_X:
+            anomaly_score = -1 * trained_lof.score_samples(one_test_tta_samples)
+            batch_anomaly_score.append(anomaly_score)
+
+        anomaly_score = np.array(batch_anomaly_score)
+    else:
+        anomaly_score = -1 * trained_lof.score_samples(test_X)
+
     return anomaly_score
 
 def ocs_test_step(test_X, trained_ocs):
@@ -221,7 +243,6 @@ def ocs_test_step(test_X, trained_ocs):
     else:
         anomaly_score = -1 * trained_ocs.score_samples(test_X)
 
-    # print("ocs tta predictions shape: ", anomaly_score.shape)
     return anomaly_score
 
 def generate_random_noise_tta_samples(x_batch_test, num_augmentations):
@@ -239,7 +260,6 @@ def generate_random_noise_tta_samples(x_batch_test, num_augmentations):
     # adding the noise to the original batch test samples. expanding the middle dim of x_batch_test to make it (batch_size, 1, dataset_features_dim)
     gaussian_tta_samples = np.expand_dims(x_batch_test, axis=1) + random_noise
     
-    # print("Gaussian tta samples shape: ", gaussian_tta_samples.shape)
     return gaussian_tta_samples
 
 def generate_kmeans_tta_samples(batch_neighbors_features, with_cuML, num_augmentations):
@@ -265,7 +285,6 @@ def generate_kmeans_tta_samples(batch_neighbors_features, with_cuML, num_augment
         # appending to the batch tta samples
         batch_tta_samples.append(tta_samples)
     
-    # print("kmeans tta samples shape: ", np.array(batch_tta_samples).shape)
     return np.array(batch_tta_samples)
 
 def generate_oversampling_tta_samples(oversampling_batch_neighbors_features, num_neighbors, num_augmentations, oversampling_method):
@@ -300,7 +319,6 @@ def generate_oversampling_tta_samples(oversampling_batch_neighbors_features, num
         current_augmentations = X_res[-num_augmentations:]
         oversampling_batch_tta_samples[index_in_batch] = current_augmentations
     
-    # print("oversampling tta samples shape: ", oversampling_batch_tta_samples.shape)
     return oversampling_batch_tta_samples
 
 def print_test_results(algorithms_folds_metrics, args):
@@ -319,12 +337,13 @@ def print_test_results(algorithms_folds_metrics, args):
 
     # creating table structure
     table = PrettyTable()
-    table.field_names = ['Algorithm', 'Autoencoder', 'Isolation Forest', 'One-Class SVM']
+    table.field_names = ['Algorithm', 'Autoencoder', 'Isolation Forest', 'One-Class SVM', 'Local Outlier Factor']
 
     for algorithm, metrics in algorithms_folds_metrics.items():
         ae_mean_std_auc = "{:0.3f}+-{:0.3f}".format(metrics['Autoencoder'].mean(axis=0), metrics['Autoencoder'].std(axis=0))
         if_mean_std_auc = "{:0.3f}+-{:0.3f}".format(metrics['Isolation Forest'].mean(axis=0), metrics['Isolation Forest'].std(axis=0))
         ocs_mean_std_auc = "{:0.3f}+-{:0.3f}".format(metrics['One-Class SVM'].mean(axis=0), metrics['One-Class SVM'].std(axis=0))
-        table.add_row([algorithm, ae_mean_std_auc, if_mean_std_auc, ocs_mean_std_auc])
+        lof_mean_std_auc = "{:0.3f}+-{:0.3f}".format(metrics['Local Outlier Factor'].mean(axis=0), metrics['Local Outlier Factor'].std(axis=0))
+        table.add_row([algorithm, ae_mean_std_auc, if_mean_std_auc, ocs_mean_std_auc, lof_mean_std_auc])
     
     print(table)

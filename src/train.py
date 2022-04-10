@@ -12,6 +12,7 @@ from siamese_model import SiameseNetwork
 
 
 from sklearn.ensemble import IsolationForest
+from sklearn.neighbors import LocalOutlierFactor
 from sklearn.svm import OneClassSVM
 
 
@@ -122,9 +123,11 @@ def train_estimator(folded_train_datasets_list, features_dim, args):
         trained_if = if_training(train_ds)
         # training OCS on current k-fold split
         trained_ocs = ocs_training(train_ds)
+        # training LOF on current k-fold split
+        trained_lof = lof_training(train_ds)
 
         # adding to models list
-        estimators_list.append({'ae': trained_ae, 'if': trained_if, 'ocs': trained_ocs})
+        estimators_list.append({'ae': trained_ae, 'if': trained_if, 'ocs': trained_ocs, 'lof': trained_lof})
     
     return estimators_list
 
@@ -198,6 +201,25 @@ def if_training(train_ds):
     if_clf = IsolationForest(random_state=42, n_jobs=-1).fit(train_X)
 
     return if_clf
+
+def lof_training(train_ds):
+    """
+    The training of an Local Outlier Factor (LOF) as anomaly detector
+
+    Parameters
+    ----------
+    train_ds: TF's Datase.t The training dataset
+    """
+
+    # collect the training set
+    train_X = []
+    for x_batch_train, y_batch_train in train_ds:
+        train_X.append(x_batch_train)
+    train_X = np.concatenate(train_X, axis=0)
+
+    lof_clf = LocalOutlierFactor(novelty=True, n_jobs=-1).fit(train_X)
+
+    return lof_clf
 
 def ocs_training(train_ds):
     """
