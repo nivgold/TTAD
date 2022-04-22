@@ -62,6 +62,7 @@ def run_experiment(args):
     end_time = time.time()
     print("--- Testing finished after: ", end='')
     get_execute_time(start_time, end_time)
+    print(f"--- Finished dataset {args.dataset_name.capitalize()} ---")
 
 if __name__ == '__main__':
 
