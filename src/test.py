@@ -124,9 +124,10 @@ def test_loop(X, test_ds, trained_estimator, euclidean_nn_model, siamese_nn_mode
         # calculate siamese nn indices
         test_batch_latent_features = trained_siamese_network(x_batch_test).numpy()
         siamese_nn_batch_neighbors_indices = siamese_nn_model.kneighbors(X=test_batch_latent_features, n_neighbors=num_neighbors, return_distance=False)
-
-        euclidean_nn_batch_neighbors_features = X[euclidean_nn_batch_neighbors_indices]
-        siamese_nn_batch_neighbors_features = X[siamese_nn_batch_neighbors_indices]
+        
+        random_idx = np.random.randint(X.shape[0], size=(x_batch_test.shape[0], num_neighbors))
+        euclidean_nn_batch_neighbors_features = X[random_idx]
+        siamese_nn_batch_neighbors_features = X[random_idx]
 
         algorithms_tta_samples_dict = {
             'Gaussian_TTA_Baseline': generate_random_noise_tta_samples(x_batch_test.numpy(), num_augmentations=num_augmentations),
