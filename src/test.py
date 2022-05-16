@@ -11,6 +11,9 @@ from imblearn.over_sampling import SMOTE
 from cuml.cluster import KMeans as cuKMeans
 from sklearn.cluster import KMeans
 
+import matplotlib.pyplot as plt
+from sklearn.manifold import TSNE
+
 from prettytable import PrettyTable
 
 # define compared algorithms from the Experiments section
@@ -25,10 +28,10 @@ evaluated_algorithms = [
 
 # define anomaly detection estimators from the Experiments section
 evaluated_estimators = [
-    'Autoencoder',
-    'Isolation Forest',
+    # 'Autoencoder',
+    # 'Isolation Forest',
     'One-Class SVM',
-    'Local Outlier Factor'
+    # 'Local Outlier Factor'
 ]
 
 def test(X, folded_test_datasets_list, trained_estimators_list, trained_siamese_network, euclidean_nn_model, siamese_nn_model, args):
@@ -103,9 +106,15 @@ def test_loop(X, test_ds, trained_estimator, euclidean_nn_model, siamese_nn_mode
     algorithms_test_loss = {algorithm: {estimator: [] for estimator in evaluated_estimators} for algorithm in evaluated_algorithms}
     algorithms_metrics = {algorithm: {estimator: None for estimator in evaluated_estimators} for algorithm in evaluated_algorithms}
 
+    all_tta_samples = []
+    all_test_samples = []
+
     test_labels = []
     tqdm_total_bar = test_ds.cardinality().numpy()
     for step, (x_batch_test, y_batch_test) in tqdm(enumerate(test_ds), total=tqdm_total_bar):
+
+        all_test_samples.append(x_batch_test)
+
         # predicting with each estimator without TTA (first Baseline)
         ae_reconstruction_loss = ae_test_step_func(x_batch_test, trained_encoder, trained_decoder, loss_func).numpy()
         if_anomaly_score = if_test_step(x_batch_test, trained_if)
@@ -113,10 +122,10 @@ def test_loop(X, test_ds, trained_estimator, euclidean_nn_model, siamese_nn_mode
         lof_anomaly_score = lof_test_step(x_batch_test, trained_lof)
 
         # saving first Baseline results for each estimator
-        algorithms_test_loss['WO_TTA_Baseline']['Autoencoder'].append(ae_reconstruction_loss)
-        algorithms_test_loss['WO_TTA_Baseline']['Isolation Forest'].append(if_anomaly_score)
+        # algorithms_test_loss['WO_TTA_Baseline']['Autoencoder'].append(ae_reconstruction_loss)
+        # algorithms_test_loss['WO_TTA_Baseline']['Isolation Forest'].append(if_anomaly_score)
         algorithms_test_loss['WO_TTA_Baseline']['One-Class SVM'].append(ocs_anomaly_score)
-        algorithms_test_loss['WO_TTA_Baseline']['Local Outlier Factor'].append(lof_anomaly_score)
+        # algorithms_test_loss['WO_TTA_Baseline']['Local Outlier Factor'].append(lof_anomaly_score)
         test_labels.append(y_batch_test.numpy())
 
         # calculate euclidean nn indices
@@ -124,7 +133,7 @@ def test_loop(X, test_ds, trained_estimator, euclidean_nn_model, siamese_nn_mode
         # calculate siamese nn indices
         test_batch_latent_features = trained_siamese_network(x_batch_test).numpy()
         siamese_nn_batch_neighbors_indices = siamese_nn_model.kneighbors(X=test_batch_latent_features, n_neighbors=num_neighbors, return_distance=False)
-        
+
         random_idx = np.random.randint(X.shape[0], size=(x_batch_test.shape[0], num_neighbors))
         euclidean_nn_batch_neighbors_features = X[random_idx]
         siamese_nn_batch_neighbors_features = X[random_idx]
@@ -136,13 +145,15 @@ def test_loop(X, test_ds, trained_estimator, euclidean_nn_model, siamese_nn_mode
             'Euclidean_Kmeans_TTA': generate_kmeans_tta_samples(euclidean_nn_batch_neighbors_features, args.with_cuml, num_augmentations=num_augmentations),
             'Siamese_Kmeans_TTA': generate_kmeans_tta_samples(siamese_nn_batch_neighbors_features, args.with_cuml, num_augmentations=num_augmentations)
         }
+        all_tta_samples.append(algorithms_tta_samples_dict['Siamese_Kmeans_TTA'])
+
         # making prediction (with the anomaly detection estimator) for every tta sample
         algorithms_tta_predictions_dict = {
             algorithm: {
-                'Autoencoder': ae_test_step_func(tta_samples, trained_encoder, trained_decoder, loss_func).numpy(),
-                'Isolation Forest': if_test_step(tta_samples, trained_if),
+                # 'Autoencoder': ae_test_step_func(tta_samples, trained_encoder, trained_decoder, loss_func).numpy(),
+                # 'Isolation Forest': if_test_step(tta_samples, trained_if),
                 'One-Class SVM': ocs_test_step(tta_samples, trained_ocs),
-                'Local Outlier Factor': lof_test_step(tta_samples, trained_lof)
+                # 'Local Outlier Factor': lof_test_step(tta_samples, trained_lof)
             }
             for algorithm, tta_samples in algorithms_tta_samples_dict.items()
         }
@@ -162,6 +173,17 @@ def test_loop(X, test_ds, trained_estimator, euclidean_nn_model, siamese_nn_mode
         algorithms_test_loss['WO_TTA_Baseline'][estimator] = np.concatenate(estimator_test_loss, axis=0)
     test_labels = np.concatenate(test_labels, axis=0)
     y_true = np.asarray(test_labels).astype(int)
+
+    normal_idx=np.random.choice(np.where(y_true == 1)[0], 1)[0]
+    all_test_samples = TSNE(n_components=2).fit_transform(np.concatenate(all_test_samples, axis=0))
+    all_tta_samples = TSNE(n_components=2).fit_transform(np.concatenate(all_tta_samples, axis=0)[normal_idx])
+    plt.scatter(all_test_samples[y_true == 0][:, 0], all_test_samples[y_true == 0][:, 1], c='g', alpha=0.6)
+    plt.scatter(all_test_samples[y_true == 1][:, 0], all_test_samples[y_true == 1][:, 1], c='r', alpha=0.6)
+    plt.scatter(all_test_samples[normal_idx, 0], all_test_samples[normal_idx, 1], c='y', alpha=1)
+    plt.scatter(all_tta_samples[:, 0], all_tta_samples[:, 1], c='b', marker="P", alpha=1)
+    plt.title(f"Selected Sample Anomaly Score: {algorithms_test_loss['Siamese_Kmeans_TTA']['One-Class SVM'][normal_idx]}")
+    plt.savefig("test.png")
+    exit(0)
 
     # calculating AUC
     for algorithm, estimator_final_preds in algorithms_metrics.items():
