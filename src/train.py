@@ -19,7 +19,6 @@ from sklearn.svm import OneClassSVM
 def train(X, y, siamese_pairs, folded_train_datasets_list, features_dim, args):
     """
     Training the framework. Training anomaly detector model (AE), training NN model, training Siamese neural network.
-
     Parameters
     ----------
     X. numpy ndarray of shape (#num_samples, #features). The dataset's features
@@ -40,7 +39,6 @@ def train(X, y, siamese_pairs, folded_train_datasets_list, features_dim, args):
 def train_siamese_model(siamese_data, batch_size, n_epochs):
     """
     Training Siamese network
-
     Parameters
     ----------
     siamese_data: tuple. A tuple containing both siamese pairs features and labels for training the Siamese network
@@ -70,7 +68,6 @@ def train_siamese_model(siamese_data, batch_size, n_epochs):
 def train_nn_model(nn_data, trained_siamese_network, with_cuml):
     """
     Training eulidean distance-based NN model and a Siamese distance-based NN model
-
     Parameters
     ----------
     nn_data. pandas DataFrame. The dataset's features
@@ -102,7 +99,6 @@ def train_nn_model(nn_data, trained_siamese_network, with_cuml):
 def train_estimator(folded_train_datasets_list, features_dim, args):
     """
     Training the anomaly detector model (AE) for every k-fold split.
-
     Parameters
     ----------
     folded_train_datasets_list. list of TF's Dataset. The training sets of every k-fold split
@@ -134,7 +130,6 @@ def train_estimator(folded_train_datasets_list, features_dim, args):
 def ae_training_loop(train_ds, train_step_func, features_dim, args):
     """
     The training loop of an Autoencoder as anomaly detector
-
     Parameters
     ----------
     train_ds. TF's Dataset. The training dataset
@@ -186,7 +181,6 @@ def ae_train_step():
 def if_training(train_ds):
     """
     The training of an Isolation Forest as anomaly detector
-
     Parameters
     ----------
     train_ds: TF's Dataset. The trainind dataset
@@ -205,7 +199,6 @@ def if_training(train_ds):
 def lof_training(train_ds):
     """
     The training of an Local Outlier Factor (LOF) as anomaly detector
-
     Parameters
     ----------
     train_ds: TF's Datase.t The training dataset
@@ -224,7 +217,6 @@ def lof_training(train_ds):
 def ocs_training(train_ds):
     """
     The training of an one-class SVM as anomaly detector
-
     Parameters
     ----------
     train_ds: TF's Dataset. The training dataset

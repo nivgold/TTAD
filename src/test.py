@@ -34,7 +34,6 @@ evaluated_estimators = [
 def test(X, folded_test_datasets_list, trained_estimators_list, trained_siamese_network, euclidean_nn_model, siamese_nn_model, args):
     """
     Performing test phase on the test set with all of the compared algorithms described in the Experiments section
-
     Parameters
     ----------
     X: ndarray of shape (#num_samples, #features). The dataset's features
@@ -75,7 +74,6 @@ def test(X, folded_test_datasets_list, trained_estimators_list, trained_siamese_
 def test_loop(X, test_ds, trained_estimator, euclidean_nn_model, siamese_nn_model, trained_siamese_network, ae_test_step_func, args):
     """
     Performing the test loop with every evaluated algorithm.
-
     Parameters
     ----------
     X: numpy ndarray of shape (#num_samples, #features). The dataset's features
@@ -182,7 +180,6 @@ def ae_test_step():
 def if_test_step(test_X, trained_if):
     """
     A test phase with Isolation Forest on the given test set
-
     Parameters
     ----------
     test_X: numpy ndarray of shape (batch_size, num_augmentations, dataset's features dim) or (batch_size, dataset's features dim). The batch test set
@@ -204,7 +201,6 @@ def if_test_step(test_X, trained_if):
 def lof_test_step(test_X, trained_lof):
     """
     A test phase with Local Outlier Factor on the given test set
-
     Parameters
     ----------
     test_X: numpy ndarray of shape (batch_size, dataset's features dim). The batch test set
@@ -226,7 +222,6 @@ def lof_test_step(test_X, trained_lof):
 def ocs_test_step(test_X, trained_ocs):
     """
     A test phase with One-Class SVM on the given test set
-
     Parameters
     ----------
     test_X: numpy ndarray of shape (batch_size, dataset's features dim). The batch test set
@@ -248,7 +243,6 @@ def ocs_test_step(test_X, trained_ocs):
 def generate_random_noise_tta_samples(x_batch_test, num_augmentations):
     """
     Generating TTA with random Gaussian noise
-
     Parameters
     ----------
     x_batch_test: ndarray of shape (batch_size, #features). The features of each test sample in the batch
@@ -265,7 +259,6 @@ def generate_random_noise_tta_samples(x_batch_test, num_augmentations):
 def generate_kmeans_tta_samples(batch_neighbors_features, with_cuML, num_augmentations):
     """
     Generating TTA with trained k-means
-
     Parameters
     ----------
     batch_neighbors_features: numpy ndarray of shape (batch_size, num_neighbors, #features). The features of each neighbor of each test sample that is in the batch
@@ -290,7 +283,6 @@ def generate_kmeans_tta_samples(batch_neighbors_features, with_cuML, num_augment
 def generate_oversampling_tta_samples(oversampling_batch_neighbors_features, num_neighbors, num_augmentations, oversampling_method):
     """
     Generating TTA with oversampling method (SMOTE)
-
     Parameters
     ----------
     oversampling_batch_neighbors_features: numpy ndarray of shape (batch_size, num_neighbors, #features). The features of each neighbor of each test sample that is in the batch
@@ -324,7 +316,6 @@ def generate_oversampling_tta_samples(oversampling_batch_neighbors_features, num
 def print_test_results(algorithms_folds_metrics, args):
     """
     Printing the results metrics of all of the evaluated algorithms
-
     Parameters
     ----------
     algorithms_folds_metrics: dictionaty. A dictionary that holds the results metrics for every algorithm in every k-fold split

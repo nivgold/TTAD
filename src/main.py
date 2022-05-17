@@ -30,7 +30,6 @@ def seed_everything(seed):
 def run_experiment(args):
     """
     Running a specific experiment with the given args
-
     Parameters
     ----------
     args: argparse args. The args given to the program
