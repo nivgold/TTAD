@@ -1,7 +1,7 @@
 # Boosting Anomaly Detection using Unsupervised Diverse Test-Time Augmentation
 The official code of the paper "Boosting Anomaly Detection using Unsupervised Diverse Test-Time Augmentation".
 
-![proposed framework](https://raw.githubusercontent.com/nivgold/TTAD/main/framework.jpg)
+![proposed framework](https://github.com/nivgold/TTAD/blob/master/framework.jpg)
 
 ## Abstract
 
