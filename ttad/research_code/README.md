@@ -5,7 +5,8 @@ The official code of the paper "Boosting Anomaly Detection using Unsupervised Di
 
 ## Abstract
 
-> Anomaly detection is a well-known task that involves the identification of abnormal events that occur relatively infrequently. Methods for improving anomaly detection performance have been widely studied. However, no studies utilizing test-time augmentation (TTA) for anomaly detection in tabular data have been performed. TTA involves aggregating the predictions of several synthetic versions of a given test sample; TTA produces different points of view for a specific test instance and might decrease its prediction bias. We propose the Test-Time Augmentation for anomaly Detection (TTAD) technique, a TTA-based method aimed at improving anomaly detection performance. TTAD augments a test instance based on its nearest neighbors; various methods, including the k-Means centroid and SMOTE methods, are used to produce the augmentations. Our technique utilizes a Siamese network to learn an advanced distance metric when retrieving a test instance's neighbors. Our experiments show that using our TTA technique significantly improves the performance of anomaly detection algorithms, as evidenced by the higher AUC results achieved on all datasets evaluated. Specifically, we observed average improvements of 0.037 AUC (3.7\%) using Autoencoder, 0.016 AUC (1.6\%) using OC-SVM, and 0.023 AUC (2.3\%) using LOF.
+> Test-time augmentation (TTA) involves aggregating the predictions of several synthetic versions of a given test sample. TTA produces different points of view for a specific test instance and might decrease its prediction bias.
+Anomaly Detection is a well-known task that involves identifying abnormal events that occur relatively infrequently and can have dangerous consequences. There exist no studies that utilize TTA for tabular anomaly detection. We propose the Test-Time Augmentation for anomaly Detection (TTAD) technique - a TTA-based method to improve anomaly detection performance. TTAD augments a test instance based on its nearest neighbors while using multiple methods to produce the augmentations, including a trained k-Means centroids' and SMOTE. Our approach utilizes a Siamese Network to learn an advanced distance metric when retrieving a test instance's neighbors. We show that the anomaly detector that uses our TTA approach achieves significantly higher AUC results for all evaluated datasets.
 
 
 ## Repository Files
@@ -89,64 +90,4 @@ $ python preprocess.py --dataset mammo
 ```bash
 $ cd src/
 $ python main.py --dataset mammo --neighbors 10 --augmentations 7
-```
-
-## TTAD Usage
-```python
-from sklear.ensemble import RandomForest
-from sklearn,model_selection import train_test_split
-from sklear.data import make_data
-
-X, y = make_data(num_samples=1000, num_class=2)
-X_train, y_train, X_test, y_test = train_test_split(X, y, test_ratio=0.3)
-
-```
-
-## Normal Flow
-```python
-rfc = RandomForest()
-rfc.fit(X_train, y_train)
-
-y_pred = rfc.predict(X_test)
-```
-
-## TTAD
-```python
-from ttad import TTADClassifier
-
-rfc = RandomForest()
-ttad_clf = TTADClassifier(model=rfc)
-
-ttad_clf.fit(X_train)
-y_pred = ttad_clf.predict(X_test)
-```
-
-## Changing Distance Metric
-```python
-from ttad.data_selector.distance_metric import Adaptive
-
-adaptive_dm = Adaptive()
-ttad_clf = TTADClassifier(model=rfc,
-                          distance_metric=adaptive_dm)
-```
-
-## Augmentation Producer Method
-```python
-from ttad.augmentation_producer import SMOTE
-
-smote_ap = SMOTE()
-ttad_clf = TTADClassifier(model=rfc,
-                          augmentation_producer=smote_ap)
-```
-
-# Citing TTAD
-If you use TTAD, please cite our work:
-```
-@article{cohen2023boosting,
-  title={Boosting Anomaly Detection Using Unsupervised Diverse Test-Time Augmentation},
-  author={Cohen, Seffi and Goldshlager, Niv and Rokach, Lior and Shapira, Bracha},
-  journal={Information Sciences},
-  year={2023},
-  publisher={Elsevier}
-}
 ```
