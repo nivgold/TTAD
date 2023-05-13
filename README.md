@@ -7,91 +7,17 @@ The official code of the paper "Boosting Anomaly Detection using Unsupervised Di
 
 > Anomaly detection is a well-known task that involves the identification of abnormal events that occur relatively infrequently. Methods for improving anomaly detection performance have been widely studied. However, no studies utilizing test-time augmentation (TTA) for anomaly detection in tabular data have been performed. TTA involves aggregating the predictions of several synthetic versions of a given test sample; TTA produces different points of view for a specific test instance and might decrease its prediction bias. We propose the Test-Time Augmentation for anomaly Detection (TTAD) technique, a TTA-based method aimed at improving anomaly detection performance. TTAD augments a test instance based on its nearest neighbors; various methods, including the k-Means centroid and SMOTE methods, are used to produce the augmentations. Our technique utilizes a Siamese network to learn an advanced distance metric when retrieving a test instance's neighbors. Our experiments show that using our TTA technique significantly improves the performance of anomaly detection algorithms, as evidenced by the higher AUC results achieved on all datasets evaluated. Specifically, we observed average improvements of 0.037 AUC (3.7\%) using Autoencoder, 0.016 AUC (1.6\%) using OC-SVM, and 0.023 AUC (2.3\%) using LOF.
 
+# Research Details
+To see the paper's evaluation implementation, including exact datasets that were used, hyperparameters, architectures, etc., go to `ttad/research_code` and refer to its README
 
-## Repository Files
-
-- ├──`data/`
-  - └──`[dataset]/`
-    - ├──`[dataset]_features.npy`: The preprocessed features of `[dataset]`
-    - ├──`[dataset]_labels.npy`: The labels of `[dataset]`
-    - ├──`[dataset]_pairs_X.npy`: The features of the pairs used for training the Siamese network of `[dataset]`
-    - └──`[dataset]_pairs_y.npy`: The labels of the pairs used for training the Siamese network of `[dataset]`
-- ├──`src/`: The source code implementation of our approach 
-
-
-## Datasets
-
-These are the datasets we used in our experiments and described in the paper.
-
-As noted, the datasets were taken from [ODDS](http://odds.cs.stonybrook.edu/).
-|Dataset|#Samples|#Dim|Outliers|
-|:---:|:---:|:---:|:---:|
-|[Annthyroid](http://odds.cs.stonybrook.edu/annthyroid-dataset/)|7200|6|7.42 (%)|
-|[Cardiotocography](http://odds.cs.stonybrook.edu/cardiotocogrpahy-dataset/)|1831|21|9.6 (%)|
-|[Mammography](http://odds.cs.stonybrook.edu/mammography-dataset/)|11183|6|2.32 (%)|
-|[Satellite](http://odds.cs.stonybrook.edu/satellite-dataset/)|6435|36|32 (%)|
-|[Seismic](http://odds.cs.stonybrook.edu/seismic-dataset/)|2584|11|6.5 (%)|
-|[Thyroid](http://odds.cs.stonybrook.edu/thyroid-disease-dataset/)|3772|6|2.5 (%)|
-|[Vowels](http://odds.cs.stonybrook.edu/japanese-vowels-data/)|1456|12|3.4 (%)|
-|[Yeast](https://archive.ics.uci.edu/ml/datasets/Yeast)|1364|8|4.7 (%)|
-|[Wine](https://archive.ics.uci.edu/ml/datasets/Wine)|178|13|7.7 (%)|
-|[Satimage](https://archive.ics.uci.edu/ml/datasets/Statlog+%28Landsat+Satellite%29)|5803|36|1.2 (%)|
-
-
-## Dependencies
-
-The required dependencies are specified in `environment.yml`.
-
-For setting up the environment, use [Anaconda](https://www.anaconda.com/):
+# Install
+Using `pip` you can install the TTAD package:
 ```bash
-$ conda env create -f environment.yml
-$ conda activate adtta
+pip install ttad
 ```
 
 
-## Running the Code
-
-**NOTES:**
-
-- A valid dataset name (instead of mammo) can be only one from the described earlier.
-- It is important to run the scripts from being inside `src/` (i.e. ```$ cd src/```)
-
----
-
-* ### **Preprocessing**
-        
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A preprocessing phase on a desired dataset.
-
-```bash
-$ cd src/
-$ python preprocess.py --dataset mammo
-```
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;From this script, 4 files are going to be generated in the desired dataset `data/` folder:
-
-&emsp;&emsp;&emsp;&emsp;- `mammo_features.npy`
-
-&emsp;&emsp;&emsp;&emsp;- `mammo_labels.npy`
-
-&emsp;&emsp;&emsp;&emsp;- `mammo_pairs_X.npy`
-
-&emsp;&emsp;&emsp;&emsp;- `mammo_pairs_y.npy`
-
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;With these files, you can run the train and test.
-
----
-
-* ### **Train & Test**
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;To train the estimator, as well as the Nearest Neighbors models (both Euclidean and Siamese) run:
-
-```bash
-$ cd src/
-$ python main.py --dataset mammo --neighbors 10 --augmentations 7
-```
-
-## TTAD Usage
+# TTAD Usage Example
 ```python
 from sklear.ensemble import RandomForest
 from sklearn,model_selection import train_test_split
@@ -110,7 +36,7 @@ rfc.fit(X_train, y_train)
 y_pred = rfc.predict(X_test)
 ```
 
-## TTAD
+## Using TTAD
 ```python
 from ttad import TTADClassifier
 
@@ -138,6 +64,7 @@ smote_ap = SMOTE()
 ttad_clf = TTADClassifier(model=rfc,
                           augmentation_producer=smote_ap)
 ```
+
 
 # Citing TTAD
 If you use TTAD, please cite our work:
