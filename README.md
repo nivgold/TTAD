@@ -19,18 +19,22 @@ pip install ttad
 
 # TTAD Usage Example
 ```python
-from sklear.ensemble import RandomForest
-from sklearn,model_selection import train_test_split
-from sklear.data import make_data
+from sklear.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklear.datasets import make_classification
 
-X, y = make_data(num_samples=1000, num_class=2)
+X, y = make_classification(n_samples=1000,
+                           n_features=10,
+                           n_informative=3,
+                           n_classes=2
+                          )
 X_train, y_train, X_test, y_test = train_test_split(X, y, test_ratio=0.3)
 
 ```
 
 ## Normal Flow
 ```python
-rfc = RandomForest()
+rfc = RandomForestClassifier()
 rfc.fit(X_train, y_train)
 
 y_pred = rfc.predict(X_test)
